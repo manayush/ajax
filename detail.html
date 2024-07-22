@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Detail</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            background-color: #fff;
+            width: 80%;
+            margin: auto;
+            padding-top: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .back-link {
+            text-decoration: none;
+            color: #007BFF;
+            display: block;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+        #country-name {
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .country-detail-item {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .flag {
+            max-width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .neighbors {
+            margin-top: 20px;
+        }
+        .neighbor-item {
+            display: inline-block;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a class="back-link" href="index.html">Back to Country List</a>
+        <h1 id="country-name">Country Name</h1>
+        <img id="flag" class="flag" src="" alt="Country Flag">
+        <div id="country-details">
+            <p class="country-detail-item"><strong>Capital:</strong> <span id="capital">N/A</span></p>
+            <p class="country-detail-item"><strong>Population:</strong> <span id="population">N/A</span></p>
+            <p class="country-detail-item"><strong>Region:</strong> <span id="region">N/A</span></p>
+            <p class="country-detail-item"><strong>Subregion:</strong> <span id="subregion">N/A</span></p>
+            <p class="country-detail-item"><strong>Languages:</strong> <span id="languages">N/A</span></p>
+            <p class="country-detail-item"><strong>Currencies:</strong> <span id="currencies">N/A</span></p>
+        </div>
+        <div id="neighbors" class="neighbors">
+            <h2>Neighboring Countries</h2>
+            <div id="neighbor-list"></div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const countryCode = urlParams.get('country');
+
+            fetch(`https://restcountries.com/v3.1/alpha/${countryCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    const country = data[0]; // Get the first (and only) item in the response
+
+                    // Update individual fields
+                    document.getElementById('country-name').textContent = country.name.common;
+                    document.getElementById('capital').textContent = country.capital ? country.capital[0] : 'N/A';
+                    document.getElementById('population').textContent = country.population || 'N/A';
+                    document.getElementById('region').textContent = country.region || 'N/A';
+                    document.getElementById('subregion').textContent = country.subregion || 'N/A';
+                    document.getElementById('languages').textContent = country.languages ? Object.values(country.languages).join(', ') : 'N/A';
+                    document.getElementById('currencies').textContent = country.currencies ? Object.values(country.currencies).map(curr => curr.name).join(', ') : 'N/A';
+
+                    // Display country flag
+                    const flagUrl = country.flags.png;
+                    document.getElementById('flag').src = flagUrl;
+                    document.getElementById('flag').alt = `${country.name.common} Flag`;
+
+                    // Fetch neighboring countries
+                    if (country.borders) {
+                        fetch(`https://restcountries.com/v3.1/alpha?codes=${country.borders.join(',')}`)
+                            .then(response => response.json())
+                            .then(neighborData => {
+                                const neighborList = document.getElementById('neighbor-list');
+                                neighborList.innerHTML = '';
+                                neighborData.forEach(neighbor => {
+                                    const neighborItem = document.createElement('div');
+                                    neighborItem.classList.add('neighbor-item');
+                                    
+                                    const neighborFlag = document.createElement('img');
+                                    neighborFlag.classList.add('flag');
+                                    neighborFlag.src = neighbor.flags.png;
+                                    neighborFlag.alt = `${neighbor.name.common} Flag`;
+                                    neighborItem.appendChild(neighborFlag);
+                                    
+                                    const neighborName = document.createElement('p');
+                                    neighborName.textContent = neighbor.name.common;
+                                    neighborItem.appendChild(neighborName);
+                                    
+                                    neighborList.appendChild(neighborItem);
+                                });
+                            })
+                            .catch(error => {
+                                console.error('Error fetching neighboring countries:', error);
+                                document.getElementById('neighbor-list').textContent = 'Unable to fetch neighboring countries.';
+                            });
+                    } else {
+                        document.getElementById('neighbor-list').textContent = 'No neighboring countries.';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('country-name').textContent = 'Country Not Found';
+                    console.error('Error fetching country details:', error);
+                });
+        });
+    </script>
+</body>
+</html>
